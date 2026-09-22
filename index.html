@@ -1015,7 +1015,7 @@
   var SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
   var sb = null;
   var isAdmin = false;
-  var configured = SUPABASE_URL.indexOf("https://supabase.com/dashboard/project/ynkswrcnjukceghjmokt") === -1 && SUPABASE_ANON_KEY.indexOf("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlua3N3cmNuanVrY2VnaGptb2t0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwNDYzNDYsImV4cCI6MjEwNTYyMjM0Nn0.ZayB97kmfjzl7qQoTTUyf11bTcbB58eHbsnzVb3x4Y8") === -1;
+  var configured = SUPABASE_URL.indexOf("https://ynkswrcnjukceghjmokt.supabase.co") === -1 && SUPABASE_ANON_KEY.indexOf("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlua3N3cmNuanVrY2VnaGptb2t0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwNDYzNDYsImV4cCI6MjEwNTYyMjM0Nn0.ZayB97kmfjzl7qQoTTUyf11bTcbB58eHbsnzVb3x4Y8") === -1;
   if (configured && window.supabase) {
     sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
