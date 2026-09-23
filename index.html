@@ -651,8 +651,12 @@
       </div>
 
       <div class="more-repos">
-        <h4>More on GitHub</h4>
-        <div class="chip-list">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+          <h4 style="margin-bottom:0;">More on GitHub</h4>
+          <button class="btn btn-ghost" id="refresh-github-btn" style="padding:8px 14px; font-size:13px;">🔄 Refresh from GitHub</button>
+        </div>
+        <p class="loading-note" id="github-updated-note" style="margin-top:8px;"></p>
+        <div class="chip-list" id="chip-list">
           <a href="https://github.com/Umar1988104/Online-Recipe-Shareing-Platform" target="_blank" rel="noopener">Online Recipe Sharing Platform</a>
           <a href="https://github.com/Umar1988104/SIH2025ENVIROMINDS" target="_blank" rel="noopener">SIH2025ENVIROMINDS</a>
           <a href="https://github.com/Umar1988104/netflix-data-analysis-python" target="_blank" rel="noopener">netflix-data-analysis-python</a>
@@ -710,6 +714,31 @@
           <h4>DSA topics practiced</h4>
           <div id="topic-bars"></div>
         </div>
+      </div>
+
+      <div class="stats-card reveal" style="margin-top:18px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+          <h4 style="margin-bottom:0;">🔴 Live from LeetCode &amp; Codeforces</h4>
+          <button class="btn btn-ghost" id="refresh-live-btn" style="padding:8px 14px; font-size:13px;">🔄 Refresh live data</button>
+        </div>
+        <p class="loading-note" id="live-updated-note" style="margin-top:6px;">Not fetched yet — click refresh.</p>
+        <div class="stats-grid" style="margin-top:16px;">
+          <div>
+            <h4 style="font-size:13.5px; color: var(--text-mute);">LeetCode — Umarsikandri</h4>
+            <div class="mini-stat-row"><span>Total solved</span><span class="v" id="lc-total">–</span></div>
+            <div class="mini-stat-row"><span>Easy</span><span class="v" id="lc-easy">–</span></div>
+            <div class="mini-stat-row"><span>Medium</span><span class="v" id="lc-med">–</span></div>
+            <div class="mini-stat-row"><span>Hard</span><span class="v" id="lc-hard">–</span></div>
+          </div>
+          <div>
+            <h4 style="font-size:13.5px; color: var(--text-mute);">Codeforces — Umarrr</h4>
+            <div class="mini-stat-row"><span>Current rating</span><span class="v" id="cf-rating">–</span></div>
+            <div class="mini-stat-row"><span>Max rating</span><span class="v" id="cf-maxrating">–</span></div>
+            <div class="mini-stat-row"><span>Rank</span><span class="v" id="cf-rank">–</span></div>
+            <div class="mini-stat-row"><span>Problems solved (AC)</span><span class="v" id="cf-solved">–</span></div>
+          </div>
+        </div>
+        <p class="loading-note" style="margin-top:14px;">GitHub and Codeforces are fetched from their official public APIs. LeetCode has no official API, so this uses a free community service — if it's ever briefly down, this card just keeps showing your last successful fetch.</p>
       </div>
     </div>
   </section>
@@ -1011,8 +1040,8 @@
      to expose publicly — access is controlled by RLS policies,
      not by hiding this key). See README.md for setup steps.
   ========================================================= */
-    var SUPABASE_URL = "https://ynkswrcnjukceghjmokt.supabase.co";
-  var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlua3N3cmNuanVrY2VnaGptb2t0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwNDYzNDYsImV4cCI6MjEwNTYyMjM0Nn0.ZayB97kmfjzl7qQoTTUyf11bTcbB58eHbsnzVb3x4Y8";
+  var SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
+  var SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
   var sb = null;
   var isAdmin = false;
   var configured = SUPABASE_URL.indexOf("YOUR_SUPABASE") === -1 && SUPABASE_ANON_KEY.indexOf("YOUR_SUPABASE") === -1;
@@ -1261,6 +1290,111 @@
       loadStats();
     });
   });
+
+  /* =========================================================
+     LIVE REFRESH — GitHub (official API), Codeforces (official
+     API), LeetCode (best-effort via a free community API).
+     All fetched directly by the visitor's browser — no backend
+     involved, nothing stored, always shows the latest on load.
+  ========================================================= */
+  var GITHUB_USERNAME = "Umar1988104";
+  var LEETCODE_USERNAME = "Umarsikandri";
+  var CODEFORCES_HANDLE = "Umarrr";
+
+  function timeAgo(dateStr){
+    var diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+    var units = [[31536000,'y'],[2592000,'mo'],[86400,'d'],[3600,'h'],[60,'m']];
+    for (var i=0;i<units.length;i++){
+      var v = Math.floor(diff / units[i][0]);
+      if (v >= 1) return v + units[i][1] + ' ago';
+    }
+    return 'just now';
+  }
+
+  function refreshGitHub(){
+    var note = document.getElementById('github-updated-note');
+    var list = document.getElementById('chip-list');
+    note.textContent = 'Fetching latest repos from GitHub…';
+    fetch('https://api.github.com/users/' + GITHUB_USERNAME + '/repos?sort=updated&per_page=30')
+      .then(function(r){ if (!r.ok) throw new Error('GitHub API error ' + r.status); return r.json(); })
+      .then(function(repos){
+        repos = repos.filter(function(r){ return r.name.toLowerCase() !== GITHUB_USERNAME.toLowerCase(); });
+        list.innerHTML = '';
+        repos.slice(0, 14).forEach(function(r){
+          var a = document.createElement('a');
+          a.href = r.html_url; a.target = '_blank'; a.rel = 'noopener';
+          var lang = r.language ? ' · ' + r.language : '';
+          a.textContent = r.name + lang;
+          a.title = (r.description || 'No description yet') + ' — updated ' + timeAgo(r.updated_at);
+          list.appendChild(a);
+        });
+        var viewAll = document.createElement('a');
+        viewAll.href = 'https://github.com/' + GITHUB_USERNAME; viewAll.target = '_blank'; viewAll.rel = 'noopener';
+        viewAll.textContent = 'View all on GitHub →';
+        list.appendChild(viewAll);
+        note.textContent = repos.length + ' repos · refreshed just now';
+      })
+      .catch(function(err){
+        note.textContent = 'Could not refresh from GitHub right now — showing the last known list.';
+      });
+  }
+
+  function refreshLeetCode(){
+    return fetch('https://leetcode-stats-api.herokuapp.com/' + LEETCODE_USERNAME)
+      .then(function(r){ if (!r.ok) throw new Error('LeetCode API error ' + r.status); return r.json(); })
+      .then(function(d){
+        if (d.status !== 'success') throw new Error('LeetCode username not found');
+        document.getElementById('lc-total').textContent = d.totalSolved;
+        document.getElementById('lc-easy').textContent = d.easySolved;
+        document.getElementById('lc-med').textContent = d.mediumSolved;
+        document.getElementById('lc-hard').textContent = d.hardSolved;
+        return true;
+      })
+      .catch(function(err){
+        document.getElementById('lc-total').textContent = 'n/a';
+        return false;
+      });
+  }
+
+  function refreshCodeforces(){
+    var infoUrl = 'https://codeforces.com/api/user.info?handles=' + CODEFORCES_HANDLE;
+    var statusUrl = 'https://codeforces.com/api/user.status?handle=' + CODEFORCES_HANDLE;
+    var p1 = fetch(infoUrl).then(function(r){ return r.json(); }).then(function(d){
+      if (d.status !== 'OK') throw new Error('Codeforces handle not found');
+      var u = d.result[0];
+      document.getElementById('cf-rating').textContent = u.rating ?? 'unrated';
+      document.getElementById('cf-maxrating').textContent = u.maxRating ?? '–';
+      document.getElementById('cf-rank').textContent = u.rank ?? '–';
+    }).catch(function(){
+      document.getElementById('cf-rating').textContent = 'n/a';
+    });
+    var p2 = fetch(statusUrl).then(function(r){ return r.json(); }).then(function(d){
+      if (d.status !== 'OK') throw new Error('no submissions');
+      var solved = new Set();
+      d.result.forEach(function(sub){
+        if (sub.verdict === 'OK') solved.add(sub.problem.contestId + '-' + sub.problem.index);
+      });
+      document.getElementById('cf-solved').textContent = solved.size;
+    }).catch(function(){
+      document.getElementById('cf-solved').textContent = 'n/a';
+    });
+    return Promise.all([p1, p2]);
+  }
+
+  function refreshLiveStats(){
+    var note = document.getElementById('live-updated-note');
+    note.textContent = 'Fetching live data from LeetCode & Codeforces…';
+    Promise.all([refreshLeetCode(), refreshCodeforces()]).then(function(){
+      note.textContent = 'Last refreshed just now — ' + new Date().toLocaleTimeString();
+    });
+  }
+
+  document.getElementById('refresh-github-btn').addEventListener('click', refreshGitHub);
+  document.getElementById('refresh-live-btn').addEventListener('click', refreshLiveStats);
+
+  /* Auto-refresh both on page load too, so visitors see fresh data without clicking */
+  setTimeout(refreshGitHub, 400);
+  setTimeout(refreshLiveStats, 700);
 
   checkSession();
   loadCertificates();
